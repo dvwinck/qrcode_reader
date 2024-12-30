@@ -17,6 +17,12 @@
     <ul id="code-list" class="list-disc list-inside bg-white p-4 rounded-lg shadow"></ul>
     <button id="export" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Export as TXT</button>
   </div>
+  <div class="mt-4">
+    <label for="camera-select" class="block text-gray-700">Select Camera:</label>
+    <select id="camera-select" class="px-4 py-2 rounded border-gray-300">
+      <option value="" disabled selected>Loading cameras...</option>
+    </select>
+  </div>
 
   <script src="https://unpkg.com/@zxing/library@latest"></script>
   <script>
@@ -24,15 +30,14 @@
     const videoElement = document.getElementById('video');
     const codeListElement = document.getElementById('code-list');
     const exportButton = document.getElementById('export');
+    const cameraSelect = document.getElementById('camera-select');
     let scannedCodes = [];
     let lastScannedCode = '';
     let isProcessing = false;
 
-    async function startCamera() {
+    async function startCamera(deviceId = null) {
       try {
-        const devices = await codeReader.listVideoInputDevices();
-        const selectedDeviceId = devices[0].deviceId;
-        await codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, async (result, err) => {
+        await codeReader.decodeFromVideoDevice(deviceId, videoElement, async (result, err) => {
           if (result && !isProcessing) {
             const code = result.text;
             if (code !== lastScannedCode) {
@@ -50,6 +55,28 @@
       }
     }
 
+    async function populateCameraOptions() {
+      try {
+        const devices = await codeReader.listVideoInputDevices();
+        cameraSelect.innerHTML = '';
+        devices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.textContent = device.label || `Camera ${index + 1}`;
+          if (device.label.toLowerCase().includes('front')) {
+            option.selected = true;
+          }
+          cameraSelect.appendChild(option);
+        });
+
+        if (devices.length > 0) {
+          startCamera(cameraSelect.value);
+        }
+      } catch (error) {
+        console.error('Error listing cameras:', error);
+      }
+    }
+
     function addCodeToList(code) {
       if (!scannedCodes.includes(code)) {
         scannedCodes.push(code);
@@ -58,6 +85,11 @@
         codeListElement.appendChild(listItem);
       }
     }
+
+    cameraSelect.addEventListener('change', (event) => {
+      codeReader.reset();
+      startCamera(event.target.value);
+    });
 
     exportButton.addEventListener('click', async () => {
       const blob = new Blob([scannedCodes.join('\n')], { type: 'text/plain' });
@@ -74,7 +106,7 @@
       await writableStream.close();
     });
 
-    startCamera();
+    populateCameraOptions();
 
     // Register service worker for PWA functionality
     if ('serviceWorker' in navigator) {
