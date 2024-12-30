@@ -41,5 +41,5 @@ This is a simple Single Page Application (SPA) for reading QR codes using the de
 
 ## License
 
-This project is licensed under the MIT License. Feel free to use, modify, and distribute it.
+This project is licensed under the UnLicense. Feel free to use, modify, and distribute it.
 
