@@ -3,39 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Code Reader SPA</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-    #video {
-      width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
-      border: 2px solid black;
-    }
-    #list {
-      margin: 20px auto;
-      max-width: 400px;
-      text-align: left;
-    }
-    button {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-  </style>
+  <meta name="theme-color" content="#4A90E2">
+  <meta name="description" content="QR Code Reader SPA">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <title>QR Code Reader PWA</title>
 </head>
-<body>
-  <h1>QR Code Reader</h1>
-  <video id="video" autoplay></video>
-  <div id="list">
-    <h2>Scanned Codes:</h2>
-    <ul id="code-list"></ul>
-    <button id="export">Export as TXT</button>
+<body class="bg-gray-100 text-center font-sans">
+  <h1 class="text-2xl font-bold text-blue-600 mt-4">QR Code Reader</h1>
+  <video id="video" autoplay class="mx-auto border-4 border-black rounded-lg mt-4 max-w-sm"></video>
+  <div id="list" class="mt-4 max-w-sm mx-auto">
+    <h2 class="text-xl font-medium text-gray-700">Scanned Codes:</h2>
+    <ul id="code-list" class="list-disc list-inside bg-white p-4 rounded-lg shadow"></ul>
+    <button id="export" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Export as TXT</button>
   </div>
 
   <script src="https://unpkg.com/@zxing/library@latest"></script>
@@ -79,15 +59,31 @@
       }
     }
 
-    exportButton.addEventListener('click', () => {
+    exportButton.addEventListener('click', async () => {
       const blob = new Blob([scannedCodes.join('\n')], { type: 'text/plain' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'scanned-codes.txt';
-      link.click();
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName: 'scanned-codes.txt',
+        types: [{
+          description: 'Text Files',
+          accept: { 'text/plain': ['.txt'] },
+        }],
+      });
+
+      const writableStream = await fileHandle.createWritable();
+      await writableStream.write(blob);
+      await writableStream.close();
     });
 
     startCamera();
+
+    // Register service worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').then(() => {
+        console.log('Service Worker registered successfully');
+      }).catch(error => {
+        console.error('Service Worker registration failed:', error);
+      });
+    }
   </script>
 </body>
 </html>
