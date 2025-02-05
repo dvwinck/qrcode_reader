@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4A90E2">
+  <meta name="description" content="QR Code Reader SPA">
+  <link rel="manifest" href="static/manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <title>QR Code Reader PWA</title>
+
+</head>
+<body class="bg-gray-100 text-center font-sans">
+
+  <div id="login-screen" class="flex justify-center items-center h-screen bg-gray-200">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-80">
+      <h2 class="text-xl font-bold mb-4">Login</h2>
+      <input id="username" type="text" placeholder="Username" class="w-full px-3 py-2 border rounded mb-2">
+      <input id="password" type="password" placeholder="Password" class="w-full px-3 py-2 border rounded mb-4">
+      <button id="login-button" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Login</button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <h1 class="text-2xl font-bold text-blue-600 mt-4">QR Code Reader</h1>
+    <video id="video" autoplay class="mx-auto border-4 border-black rounded-lg mt-4 max-w-sm"></video>
+    <div id="list" class="mt-4 max-w-sm mx-auto">
+      <h2 class="text-xl font-medium text-gray-700">Scanned Codes:</h2>
+      <ul id="code-list" class="list-decimal list-outside bg-white p-4 rounded-lg shadow max-h-40 overflow-auto text-right whitespace-nowrap overflow-hidden"></ul>
+      <button id="export" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Enviar cupons</button>
+      <button id="download" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 hidden" >Baixar Lista</button>
+      <button id="csv" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400" disabled>Baixar CSV</button>
+      <label id="status-label" style="display: block; margin-top: 10px; font-weight: bold;"></label>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <script src="static/script.js"></script>
+  <script src="static/cam.js"></script>
+</body>
+</html>
