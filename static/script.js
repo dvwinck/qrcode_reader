@@ -105,7 +105,6 @@ downloadButton.addEventListener('click', () => {
     link.click();
 });
 
-
 csvButton.addEventListener('click', async () => {
     try {
         const response = await fetch("http://localhost:8000/download-zip", {
