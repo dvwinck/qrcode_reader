@@ -2,6 +2,7 @@
 const exportButton = document.getElementById('export');
 const downloadButton = document.getElementById('download');
 const csvButton = document.getElementById('csv');
+const statusLabel = document.getElementById('status-label'); // Novo label
 desativarBotao();
 
 let credentials = btoa(`"":""`);

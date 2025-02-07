@@ -35,9 +35,13 @@ async def serve_frontend():
 security = HTTPBasic()
 
 USERS = {
-    "admin": "password123",
+    "admin": "ott@2025",
     "diogo": "diogo",
-    "xavier": "xavier"
+    "xavier": "ott@2025",
+    "ricardo": "ott@2025",
+    "tatiana": "ott@2025",
+    "fabricio": "ott@2025",
+    "talita": "ott@2025"
 }
 
 @app.post("/auth")
