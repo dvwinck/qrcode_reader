@@ -5,7 +5,6 @@ DOMINIO="qrcode.ottimizzaautomacaocontabil.com.br"
 EMAIL="diogo.winck@gmail.com"
 CERTBOT_CONTAINER="certbot"
 WEBROOT_PATH="/var/www/certbot"
-CRON_JOB="0 3 * * * docker-compose run --rm $CERTBOT_CONTAINER renew && docker-compose restart nginx"
 
 echo "🚀 Iniciando o setup do Certbot para $DOMINIO"
 
