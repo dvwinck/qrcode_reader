@@ -16,7 +16,7 @@ document.getElementById('login-button').addEventListener('click', async () => {
     // Codifica o usuário e senha em Base64
 
 
-    const response = await fetch('/auth', {
+    const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ exportButton.addEventListener('click', async () => {
     formData.append("file", blob, "scanned-codes.txt");
 
     try {
-        const response = await fetch("/processar-links/", {
+        const response = await fetch("/api/processar-links/", {
             method: "POST",
             headers: {
                 // Enviar autenticação Basic Auth (se necessário)
@@ -79,7 +79,7 @@ exportButton.addEventListener('click', async () => {
 async function verificarProcessamentoConcluido() {
     try {
         while (true) {
-            const statusResponse = await fetch("/status-processamento/", {
+            const statusResponse = await fetch("/api/status-processamento/", {
                 method: "GET",
                 headers: {
                     'Authorization': `Basic ${credentials}`  // Adiciona a autenticação
@@ -113,7 +113,7 @@ downloadButton.addEventListener('click', () => {
 
 csvButton.addEventListener('click', async () => {
     try {
-        const response = await fetch("download-zip", {
+        const response = await fetch("api/download-zip", {
             method: "GET",
             headers: {
                 "Authorization": `Basic ${credentials}`
@@ -170,7 +170,7 @@ function ativarBotao() {
 
 // Register service worker for PWA functionality
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('static/service-worker.js').then(() => {
+    navigator.serviceWorker.register('js/service-worker.js').then(() => {
         console.log('Service Worker registered successfully');
     }).catch(error => {
         console.error('Service Worker registration failed:', error);
