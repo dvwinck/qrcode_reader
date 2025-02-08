@@ -3,6 +3,8 @@ const exportButton = document.getElementById('export');
 const downloadButton = document.getElementById('download');
 const csvButton = document.getElementById('csv');
 const statusLabel = document.getElementById('status-label'); // Novo label
+const clearListButton = document.getElementById("clear-list");
+
 desativarBotao();
 
 let credentials = btoa(`"":""`);
@@ -37,7 +39,8 @@ exportButton.addEventListener('click', async () => {
         alert("Nenhum código para exportar!");
         return;
     }
-   desativarBotao();
+    showLoader();
+    desativarBotao();
 
     // Criando um arquivo Blob com os dados escaneados
     const blob = new Blob([scannedCodes.join('\n')], { type: 'text/plain' });
@@ -66,7 +69,9 @@ exportButton.addEventListener('click', async () => {
         }
     } catch (error) {
         console.error("Erro ao enviar os links:", error);
-        statusLabel.innerText =("Erro ao conectar-se ao servidor.", error);
+        statusLabel.innerText = ("Erro ao conectar-se ao servidor.", error);
+    } finally {
+       hideLoader();
     }
 });
 
@@ -108,7 +113,7 @@ downloadButton.addEventListener('click', () => {
 
 csvButton.addEventListener('click', async () => {
     try {
-        const response = await fetch("http://localhost:8000/download-zip", {
+        const response = await fetch("download-zip", {
             method: "GET",
             headers: {
                 "Authorization": `Basic ${credentials}`
@@ -136,6 +141,18 @@ csvButton.addEventListener('click', async () => {
     }
 });
 
+function showLoader() {
+    const loader = document.getElementById("loader");
+    loader.classList.remove("hidden"); // Exibe o loader
+}
+
+// Nova função para esconder o loader quando necessário
+function hideLoader() {
+    const loader = document.getElementById("loader");
+    loader.classList.add("hidden"); // Esconde o loader
+}
+
+
 // Função para desativar o botão (ficará cinza)
 function desativarBotao() {
     csvButton.disabled = true;
@@ -159,3 +176,9 @@ if ('serviceWorker' in navigator) {
         console.error('Service Worker registration failed:', error);
     });
 }
+
+clearListButton.addEventListener("click", () => {
+    scannedCodes = []; // Limpa o array
+    document.getElementById("code-list").innerHTML = ""; // Limpa a listagem visualmente
+    document.getElementById("qr-count").textContent = "0"; // Reseta o contador de QR Codes lidos
+});

@@ -6,6 +6,19 @@ const codeListElement = document.getElementById('code-list');
 let scannedCodes = [];
 let lastScannedCode = '';
 let isProcessing = false;
+let useBackCamera = true;
+
+document.getElementById("switch-camera-btn").addEventListener("click", () => {
+    useBackCamera = !useBackCamera;
+    startCamera();
+});
+
+startCamera();
+
+// Atualiza o contador de QR Codes lidos
+function updateQRCodeCount() {
+    document.getElementById("qr-count").textContent = scannedCodes.length;
+}
 
 async function startCamera(deviceId = null) {
     try {
@@ -22,9 +35,23 @@ async function startCamera(deviceId = null) {
             throw new Error("Nenhuma câmera encontrada.");
         }
 
-        // Se deviceId não for passado, usa a primeira câmera disponível
-        const selectedDeviceId = deviceId || videoDevices[0].deviceId;
+        let selectedDeviceId = deviceId;
 
+        // Se nenhum deviceId foi passado, escolhe a câmera correta (traseira ou frontal)
+        if (!selectedDeviceId) {
+            const preferredCamera = videoDevices.find(device =>
+                device.label.toLowerCase().includes(useBackCamera ? "back" : "front")
+            );
+
+            selectedDeviceId = preferredCamera ? preferredCamera.deviceId : videoDevices[0].deviceId;
+        }
+
+        // Para a câmera atual antes de iniciar a nova
+        if (videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(track => track.stop());
+        }
+
+        // Inicializa o leitor de QR Code com a câmera selecionada
         await codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, async (result, err) => {
             if (result && !isProcessing) {
                 const code = result.text;
@@ -34,7 +61,7 @@ async function startCamera(deviceId = null) {
                     addCodeToList(code);
                     setTimeout(() => {
                         isProcessing = false;
-                    }, 1000); // Espera 1 segundo antes de escanear novamente
+                    }, 1000); // Evita leituras duplicadas muito rápidas
                 }
             }
         });
@@ -49,9 +76,11 @@ async function startCamera(deviceId = null) {
 function addCodeToList(code) {
     if (!scannedCodes.includes(code)) {
         scannedCodes.push(code);
-        const listItem = document.createElement('p');
-        listItem.classList.add('text-right', 'whitespace-nowrap', 'overflow-hidden'); // Alinha à direita e oculta o que excede
+        updateQRCodeCount();
+
+        const listItem = document.createElement("p");
+        listItem.classList.add("text-right", "whitespace-nowrap", "overflow-hidden");
         listItem.textContent = code;
-        codeListElement.appendChild(listItem);
+        document.getElementById("code-list").appendChild(listItem);
     }
 }

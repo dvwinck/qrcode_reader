@@ -5,32 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#4A90E2">
   <meta name="description" content="QR Code Reader SPA">
+
   <link rel="manifest" href="static/manifest.json">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-  <title>QR Code Reader PWA</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
+  <title>QR Code Reader PWA</title>
 </head>
 <body class="bg-gray-100 text-center font-sans">
 
+  <!-- Tela de Login -->
   <div id="login-screen" class="flex justify-center items-center h-screen bg-gray-200">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-80">
-      <h2 class="text-xl font-bold mb-4">Login</h2>
-      <input id="username" type="text" placeholder="Username" class="w-full px-3 py-2 border rounded mb-2">
-      <input id="password" type="password" placeholder="Password" class="w-full px-3 py-2 border rounded mb-4">
-      <button id="login-button" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Login</button>
+    <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+      <h2 class="text-2xl font-bold mb-6 text-gray-700">Login</h2>
+      <input id="username" type="text" placeholder="Username" class="w-full px-4 py-2 border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <input id="password" type="password" placeholder="Password" class="w-full px-4 py-2 border rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <button id="login-button" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
     </div>
   </div>
 
-  <div id="app" class="hidden">
-    <h1 class="text-2xl font-bold text-blue-600 mt-4">QR Code Reader</h1>
-    <video id="video" autoplay class="mx-auto border-4 border-black rounded-lg mt-4 max-w-sm"></video>
-    <div id="list" class="mt-4 max-w-sm mx-auto">
-      <h2 class="text-xl font-medium text-gray-700">Scanned Codes:</h2>
-      <ul id="code-list" class="list-decimal list-outside bg-white p-4 rounded-lg shadow max-h-40 overflow-auto text-right whitespace-nowrap overflow-hidden"></ul>
-      <button id="export" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Enviar cupons</button>
-      <button id="download" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 hidden" >Baixar Lista</button>
-      <button id="csv" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400" disabled>Baixar CSV</button>
-      <label id="status-label" style="display: block; margin-top: 10px; font-weight: bold;"></label>
+  <!-- Aplicação -->
+  <div id="app" class="hidden p-6">
+    <h1 class="text-3xl font-bold text-blue-600 mb-4">QR Code Reader</h1>
+
+    <!-- Contêiner da Câmera -->
+    <div class="relative mx-auto max-w-sm">
+      <video id="video" autoplay class="border-4 border-gray-800 rounded-lg w-full shadow-lg"></video>
+
+      <!-- Botão para alternar a câmera -->
+      <button id="switch-camera-btn" class="absolute top-2 right-2 bg-gray-900 text-white p-2 rounded-full shadow-md hover:bg-gray-700 transition-all">
+        <i class="fas fa-camera-retro"></i>
+      </button>
+    </div>
+
+    <!-- Contador de QR Codes lidos -->
+    <div class="mt-4 text-lg text-gray-700">
+      <span>QR Codes Lidos: </span><span id="qr-count" class="font-bold text-blue-500">0</span>
+       <!-- Botão para limpar a lista -->
+        <button id="clear-list" class="top-0 right-0 bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-all">
+        <i class="fas fa-trash-alt"></i> Limpar</button>
+    </div>
+
+    <!-- Lista de códigos escaneados -->
+    <div id="list" class="relative mt-6 max-w-sm mx-auto">
+      <h2 class="text-xl font-medium text-gray-700">Códigos Escaneados:</h2>
+
+
+      <ul id="code-list" class="bg-white p-4 rounded-lg shadow max-h-40 overflow-auto text-right whitespace-nowrap overflow-hidden border border-gray-300"></ul>
+
+      <!-- Botões de ação -->
+      <div class="mt-4 flex flex-col gap-2">
+        <button id="export" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex justify-center items-center">
+          <i class="fas fa-paper-plane mr-2"></i> Enviar Cupons
+        </button>
+
+        <button id="download" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all hidden">
+          <i class="fas fa-download"></i> Baixar Lista
+        </button>
+
+        <button id="csv" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400" disabled>
+          <i class="fas fa-file-csv"></i> Baixar CSV
+        </button>
+      </div>
+
+      <!-- Loader (invisível por padrão) -->
+      <div id="loader" class="hidden mt-4 flex justify-center">
+        <div class="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-500"></div>
+      </div>
+
+      <label id="status-label" class="block mt-4 font-bold text-gray-700"></label>
     </div>
   </div>
 
