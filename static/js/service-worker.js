@@ -1,11 +1,11 @@
 const CACHE_NAME = 'qr-code-reader-cache-v1';
 const STATIC_ASSETS = [
-    '/static/index.html',
-    '/static/manifest.json',
-    '/static/service-worker.js',
-    '/static/script.js',
-    '/static/icons/icon-192x192.png',
-    '/static/icons/icon-512x512.png'
+    '/index.html',
+    '/manifest.json',
+    '/js/service-worker.js',
+    '/js/script.js',
+    '/icons/icon-192x192.png',
+    '/icons/icon-512x512.png'
 ];
 
 // Instala o Service Worker e adiciona arquivos ao cache
