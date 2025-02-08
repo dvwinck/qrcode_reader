@@ -24,13 +24,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Rota para servir a página inicial (index.html)
-@app.get("/")
-async def serve_frontend():
-    return FileResponse("static/index.html")
-
 
 security = HTTPBasic()
 
