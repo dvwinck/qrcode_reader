@@ -1,9 +1,5 @@
-
-const exportButton = document.getElementById('export');
-const downloadButton = document.getElementById('download');
 const csvButton = document.getElementById('csv');
-const statusLabel = document.getElementById('status-label'); // Novo label
-const clearListButton = document.getElementById("clear-list");
+const statusLabel = document.getElementById('status-label');
 
 desativarBotao();
 
@@ -13,14 +9,11 @@ document.getElementById('login-button').addEventListener('click', async () => {
     const password = document.getElementById('password').value;
     credentials = btoa(`${username}:${password}`);
 
-    // Codifica o usuário e senha em Base64
-
-
     const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${credentials}`  // Adiciona a autenticação
+            'Authorization': `Basic ${credentials}`
         },
         body: JSON.stringify({ username, password })
     });
@@ -34,86 +27,48 @@ document.getElementById('login-button').addEventListener('click', async () => {
     }
 });
 
-exportButton.addEventListener('click', async () => {
-    if (scannedCodes.length === 0) {
-        alert("Nenhum código para exportar!");
-        return;
-    }
-    showLoader();
-    desativarBotao();
-
-    // Criando um arquivo Blob com os dados escaneados
-    const blob = new Blob([scannedCodes.join('\n')], { type: 'text/plain' });
-    const formData = new FormData();
-    formData.append("file", blob, "scanned-codes.txt");
-
+// 🚀 **Função para processar QR Code automaticamente**
+async function processarQRCode(qrcode) {
     try {
-        const response = await fetch("/api/processar-links/", {
+        statusLabel.innerText = `Enviando QR Code...`;
+
+        const response = await fetch("/api/processar-qrcode/", {
             method: "POST",
             headers: {
-                // Enviar autenticação Basic Auth (se necessário)
-                'Authorization': `Basic ${credentials}`  // Adiciona a autenticação
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/json'
             },
-            body: formData
+            body: JSON.stringify({ qrcode_url: qrcode })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            statusLabel.innerText =("Processamento iniciado. Aguarde...");
-
-            // Verifica periodicamente se o processamento foi concluído
-            await verificarProcessamentoConcluido();
+            statusLabel.innerText = `QR Code enviado! Total processados: ${data.total_qrcodes}`;
+            ativarBotao();
         } else {
-            statusLabel.innerText =("Erro no processamento: " + (data.message || "Erro desconhecido"));
+            console.error("Erro ao processar QR Code:", data.message);
         }
     } catch (error) {
-        console.error("Erro ao enviar os links:", error);
-        statusLabel.innerText = ("Erro ao conectar-se ao servidor.", error);
-    } finally {
-       hideLoader();
-    }
-});
-
-// Função para verificar o status do processamento no backend
-async function verificarProcessamentoConcluido() {
-    try {
-        while (true) {
-            const statusResponse = await fetch("/api/status-processamento/", {
-                method: "GET",
-                headers: {
-                    'Authorization': `Basic ${credentials}`  // Adiciona a autenticação
-                }
-            });
-
-            const statusData = await statusResponse.json();
-
-            if (statusResponse.ok && statusData.status === "concluido") {
-                statusLabel.innerText =("Processamento concluído com sucesso! Você pode baixar o relatório.");
-                ativarBotao()
-                return;
-            }
-
-            // Aguarda 5 segundos antes de verificar novamente
-            await new Promise(resolve => setTimeout(resolve, 15000));
-        }
-    } catch (error) {
-        console.error("Erro ao verificar status:", error);
-        statusLabel.innerText =("Erro ao verificar o status do processamento.");
+        console.error("Erro ao enviar QR Code:", error);
     }
 }
 
-downloadButton.addEventListener('click', () => {
-    const blob = new Blob([scannedCodes.join('\n')], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'scanned-codes.txt';
-    link.click();
+// 📷 **Captura automática do QR Code**
+function onQRCodeScanned(qrcode) {
+    processarQRCode(qrcode);
+}
+
+// 🔍 **Simulação de leitura do QR Code (substituir pela leitura real)**
+document.getElementById("video").addEventListener("click", () => {
+    const sampleQRCode = "https://sat.sef.sc.gov.br/nfce/consulta?p=123456789";
+    onQRCodeScanned(sampleQRCode);
 });
 
+// 🎯 **Botão para baixar relatório, CSV e notas**
 csvButton.addEventListener('click', async () => {
     try {
-        const response = await fetch("api/download-zip", {
+        const response = await fetch("/api/download-relatorio/", {
             method: "GET",
             headers: {
                 "Authorization": `Basic ${credentials}`
@@ -124,14 +79,11 @@ csvButton.addEventListener('click', async () => {
             throw new Error("Falha ao baixar o arquivo.");
         }
 
-        // Criar um blob com os dados recebidos
         const blob = await response.blob();
         const downloadUrl = URL.createObjectURL(blob);
-
-        // Criar um link e forçar o download
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = "relatorio.zip"; // Nome do arquivo baixado
+        link.download = "relatorio_e_notas.zip";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -141,44 +93,16 @@ csvButton.addEventListener('click', async () => {
     }
 });
 
-function showLoader() {
-    const loader = document.getElementById("loader");
-    loader.classList.remove("hidden"); // Exibe o loader
-}
-
-// Nova função para esconder o loader quando necessário
-function hideLoader() {
-    const loader = document.getElementById("loader");
-    loader.classList.add("hidden"); // Esconde o loader
-}
-
-
-// Função para desativar o botão (ficará cinza)
+// 🔹 **Desativar botão de download inicialmente**
 function desativarBotao() {
     csvButton.disabled = true;
     csvButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
     csvButton.classList.add('bg-gray-400', 'cursor-not-allowed');
 }
 
-// Função para ativar o botão (volta ao azul)
+// 🔹 **Ativar botão de download**
 function ativarBotao() {
     csvButton.disabled = false;
     csvButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
     csvButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
 }
-
-
-// Register service worker for PWA functionality
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('js/service-worker.js').then(() => {
-        console.log('Service Worker registered successfully');
-    }).catch(error => {
-        console.error('Service Worker registration failed:', error);
-    });
-}
-
-clearListButton.addEventListener("click", () => {
-    scannedCodes = []; // Limpa o array
-    document.getElementById("code-list").innerHTML = ""; // Limpa a listagem visualmente
-    document.getElementById("qr-count").textContent = "0"; // Reseta o contador de QR Codes lidos
-});
