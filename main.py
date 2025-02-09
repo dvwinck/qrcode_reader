@@ -1,91 +1,100 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import FileResponse, JSONResponse
-import os
-import time
-import shutil
-import zipfile
+import requests
 import logging
+import re
 
-# Configuração de diretórios e tempo de espera
-_SLEEP_TIME = 1
-NF_DIR = "NF"
-PROCESSING_DIR = "PROCESSING"
-OUTPUT_ZIP = "relatorio_e_notas.zip"
-
-# Configuração de logs
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Inicializa FastAPI
 app = FastAPI()
 security = HTTPBasic()
 
-# Dicionário para armazenar os resultados por usuário
-resultados = {}
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Usuários autorizados
+USERS = {
+    "admin": "ott@2025",
+    "diogo": "diogo",
+    "xavier": "ott@2025",
+    "ricardo": "ott@2025",
+    "tatiana": "ott@2025",
+    "fabricio": "ott@2025",
+    "talita": "ott@2025"
+}
 
-# Função para limpar diretórios antes do processamento
-def limpar_pastas(user_dir):
-    if os.path.exists(user_dir):
-        shutil.rmtree(user_dir)
-    os.makedirs(user_dir, exist_ok=True)
-    os.makedirs(f"{user_dir}/{NF_DIR}", exist_ok=True)
+# Função de autenticação
+@app.post("/auth")
+def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_password = USERS.get(credentials.username)
+    logger.info(f"username: {credentials.username} pass: {correct_password}")
 
+    if correct_password is None or correct_password != credentials.password:
+        raise HTTPException(
+            status_code=401,
+            detail="Credenciais inválidas.",
+            headers={"WWW-Authenticate": "Basic"}
+        )
 
-# Função para compactar relatórios e notas fiscais
-def compactar_relatorio(user_dir):
-    zip_path = os.path.join(user_dir, OUTPUT_ZIP)
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for root, _, files in os.walk(user_dir):
-            for file in files:
-                full_path = os.path.join(root, file)
-                relative_path = os.path.relpath(full_path, user_dir)
-                zf.write(full_path, arcname=relative_path)
-    return zip_path
+    return {"message": "Autenticação bem-sucedida"}
 
+# Função para remover caracteres especiais
+def remover_caracteres_especiais(texto):
+    return re.sub(r"[^a-zA-Z0-9\s:/]", "", texto)
 
+# Função para obter os dados do QR Code
+def obter_dados_qrcode(qrcode_url):
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.1 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        }
+
+        response = requests.get(qrcode_url, headers=headers)
+        response.raise_for_status()
+
+        # Verifica se a resposta é válida (conteúdo esperado)
+        if "totalNumb" not in response.text:
+            raise HTTPException(status_code=400, detail="Conteúdo da página inválido.")
+
+        valor_total = "N/A"
+        emissao_data = "N/A"
+        emissao_hora = "N/A"
+
+        # Extração usando expressões regulares para maior robustez
+        total_match = re.search(r'class="totalNumb txtMax">([\d,\.]+)</span>', response.text)
+        if total_match:
+            valor_total = total_match.group(1)
+
+        emissao_match = re.search(r'<strong>\s*Emissão:\s*</strong>(.*?)<', response.text)
+        if emissao_match:
+            partes = remover_caracteres_especiais(emissao_match.group(1)).split()
+            if len(partes) >= 2:
+                emissao_data, emissao_hora = partes[0], partes[1]
+
+        return {
+            "data": emissao_data,
+            "hora": emissao_hora,
+            "valor_total": valor_total,
+            "link": qrcode_url,
+        }
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Erro ao acessar a URL: {qrcode_url} - Erro: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao acessar a URL: {str(e)}")
+
+# Endpoint para processar QR Codes
 @app.post("/processar-qrcode/")
-async def processar_qrcode(qrcode_url: str, credentials: HTTPBasicCredentials = Depends(security)):
-    """Processa um QR Code individualmente ao ser lido"""
-    username = credentials.username
-    user_dir = os.path.join(PROCESSING_DIR, username)
+async def processar_qrcode(data: dict, credentials: HTTPBasicCredentials = Depends(security)):
+    if "codigo" not in data or not isinstance(data["codigo"], str):
+        raise HTTPException(status_code=400, detail="Formato inválido. Envie um JSON com {'codigo': 'URL'}")
 
-    if username not in resultados:
-        resultados[username] = []
-        limpar_pastas(user_dir)
+    qrcode_url = data["codigo"].strip()
+    if not qrcode_url.startswith("http"):
+        raise HTTPException(status_code=400, detail="URL inválida para QR Code")
 
-    sequencial = len(resultados[username]) + 1
-    resultado = obter_dados_cupom(qrcode_url, sequencial, user_dir)
-    resultados[username].append(resultado)
+    resultado = obter_dados_qrcode(qrcode_url)
+    return resultado
 
-    time.sleep(_SLEEP_TIME)
-
-    return JSONResponse(content={"message": "QR Code processado!", "total_qrcodes": len(resultados[username])})
-
-
-@app.get("/download-relatorio/")
-async def download_relatorio(credentials: HTTPBasicCredentials = Depends(security)):
-    """Verifica o status do processamento e disponibiliza o download do relatório, CSV e notas"""
-    username = credentials.username
-    user_dir = os.path.join(PROCESSING_DIR, username)
-
-    if username not in resultados or not resultados[username]:
-        return JSONResponse(content={"status": "pendente"}, status_code=200)
-
-    # Gerar CSV e relatório se ainda não foi feito
-    csv_file = os.path.join(user_dir, "relatorio_cupons.csv")
-    report_file = os.path.join(user_dir, "relatorio_cupons.html")
-
-    if not os.path.exists(csv_file):
-        salvar_resultados_em_csv(resultados[username], csv_file)
-        salvar_resultados_em_arquivo(resultados[username], report_file)
-        copiar_arquivos_nfe(user_dir)
-        compactar_relatorio(user_dir)
-
-    # Retorna o arquivo ZIP gerado
-    zip_path = os.path.join(user_dir, OUTPUT_ZIP)
-    if os.path.exists(zip_path):
-        return FileResponse(zip_path, media_type="application/zip", filename="relatorio_e_notas.zip")
-
-    return JSONResponse(content={"status": "concluido", "download_url": "/download-relatorio/"}, status_code=200)
+# Inicializa a API
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
