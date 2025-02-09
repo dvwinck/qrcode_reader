@@ -1,4 +1,3 @@
-<script src="js/script.js"></script>
 import { processarQRCode } from 'js/script.js';
 
 const codeReader = new ZXing.BrowserQRCodeReader();
