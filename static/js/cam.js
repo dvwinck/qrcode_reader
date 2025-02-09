@@ -51,17 +51,11 @@ async function startCamera(deviceId = null) {
             return;
         }
 
-        // Atualiza o ID do dispositivo ativo
-        activeDeviceId = selectedDeviceId;
-
-        // Reseta o leitor antes de iniciar um novo dispositivo
-        codeReader.reset();
-
         // Inicia a leitura do QR Code
         await codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, async (result, err) => {
             if (result && !isProcessing) {
                 const code = result.text;
-                if (code !== lastScannedCode) {
+                if (code && code !== lastScannedCode) {
                     lastScannedCode = code;
                     isProcessing = true;
                     addCodeToList(code);
