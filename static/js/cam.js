@@ -1,5 +1,3 @@
-import { processarQRCode } from './js/script.js';
-
 const codeReader = new ZXing.BrowserQRCodeReader();
 const videoElement = document.getElementById('video');
 const codeListElement = document.getElementById('code-list');
