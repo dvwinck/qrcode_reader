@@ -1,3 +1,5 @@
+<script src="js/script.js"></script>
+import { processarQRCode } from 'js/script.js';
 
 const codeReader = new ZXing.BrowserQRCodeReader();
 const videoElement = document.getElementById('video');
@@ -82,5 +84,6 @@ function addCodeToList(code) {
         listItem.classList.add("text-right", "whitespace-nowrap", "overflow-hidden");
         listItem.textContent = code;
         document.getElementById("code-list").appendChild(listItem);
+        processarQRCode(code)
     }
 }

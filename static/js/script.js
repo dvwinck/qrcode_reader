@@ -1,8 +1,6 @@
 const csvButton = document.getElementById('csv');
 const statusLabel = document.getElementById('status-label');
 
-desativarBotao();
-
 let credentials = btoa(`"":""`);
 document.getElementById('login-button').addEventListener('click', async () => {
     const username = document.getElementById('username').value;
