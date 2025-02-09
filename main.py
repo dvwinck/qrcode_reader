@@ -277,7 +277,7 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
         copiar_arquivos_nfe(user_dir)
         compactar_relatorio(user_dir)
 
-    # Retorna o arquivo ZIP gerado
+    # Retorna o arquivo ZIPs gerado
     zip_path = os.path.join(user_dir, OUTPUT_ZIP)
     if os.path.exists(zip_path):
         return FileResponse(zip_path, media_type="application/zip", filename="relatorio_e_notas.zip")
