@@ -1,4 +1,4 @@
-import { processarQRCode } from 'js/script.js';
+import { processarQRCode } from './js/script.js';
 
 const codeReader = new ZXing.BrowserQRCodeReader();
 const videoElement = document.getElementById('video');
@@ -8,6 +8,7 @@ let scannedCodes = [];
 let lastScannedCode = '';
 let isProcessing = false;
 let useBackCamera = true;
+let activeDeviceId = null;
 
 document.getElementById("switch-camera-btn").addEventListener("click", () => {
     useBackCamera = !useBackCamera;
@@ -23,12 +24,10 @@ function updateQRCodeCount() {
 
 async function startCamera(deviceId = null) {
     try {
-        // Verifica se o navegador suporta getUserMedia
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error("Acesso à câmera não suportado neste navegador.");
         }
 
-        // Obtém a lista de câmeras disponíveis
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === "videoinput");
 
@@ -36,23 +35,31 @@ async function startCamera(deviceId = null) {
             throw new Error("Nenhuma câmera encontrada.");
         }
 
+        // Define o dispositivo correto com base na preferência (traseira ou frontal)
         let selectedDeviceId = deviceId;
-
-        // Se nenhum deviceId foi passado, escolhe a câmera correta (traseira ou frontal)
         if (!selectedDeviceId) {
             const preferredCamera = videoDevices.find(device =>
                 device.label.toLowerCase().includes(useBackCamera ? "back" : "front")
             );
-
             selectedDeviceId = preferredCamera ? preferredCamera.deviceId : videoDevices[0].deviceId;
         }
 
-        // Para a câmera atual antes de iniciar a nova
         if (videoElement.srcObject) {
             videoElement.srcObject.getTracks().forEach(track => track.stop());
         }
 
-        // Inicializa o leitor de QR Code com a câmera selecionada
+        // Se a câmera já está ativa com o mesmo dispositivo, evita reiniciar
+        if (selectedDeviceId === activeDeviceId) {
+            return;
+        }
+
+        // Atualiza o ID do dispositivo ativo
+        activeDeviceId = selectedDeviceId;
+
+        // Reseta o leitor antes de iniciar um novo dispositivo
+        codeReader.reset();
+
+        // Inicia a leitura do QR Code
         await codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, async (result, err) => {
             if (result && !isProcessing) {
                 const code = result.text;
@@ -62,7 +69,7 @@ async function startCamera(deviceId = null) {
                     addCodeToList(code);
                     setTimeout(() => {
                         isProcessing = false;
-                    }, 1000); // Evita leituras duplicadas muito rápidas
+                    }, 1000);
                 }
             }
         });
@@ -73,7 +80,6 @@ async function startCamera(deviceId = null) {
     }
 }
 
-
 function addCodeToList(code) {
     if (!scannedCodes.includes(code)) {
         scannedCodes.push(code);
@@ -83,6 +89,7 @@ function addCodeToList(code) {
         listItem.classList.add("text-right", "whitespace-nowrap", "overflow-hidden");
         listItem.textContent = code;
         document.getElementById("code-list").appendChild(listItem);
-        processarQRCode(code)
+
+        processarQRCode(code);
     }
 }
