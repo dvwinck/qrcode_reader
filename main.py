@@ -271,16 +271,15 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
     # Gerar CSV e relatório se ainda não foi feito
     csv_file = os.path.join(user_dir, "relatorio_cupons.csv")
     report_file = os.path.join(user_dir, "relatorio_cupons.html")
-
+    # Retorna o arquivo ZIPs gerado
     if not os.path.exists(csv_file):
         salvar_resultados_em_csv(resultados[username], csv_file)
         salvar_resultados_em_arquivo(resultados[username], report_file)
         copiar_arquivos_nfe(user_dir)
         compactar_relatorio(OUTPUT_ZIP,user_dir)
 
-    # Retorna o arquivo ZIPs gerado
-    zip_path = os.path.join(user_dir, OUTPUT_ZIP)
-    if os.path.exists(zip_path):
+
+    if os.path.exists(OUTPUT_ZIP):
         return FileResponse(zip_path, media_type="application/zip", filename="relatorio_e_notas.zip")
 
     return JSONResponse(content={"status": "concluido", "download_url": "/download-relatorio/"}, status_code=200)
