@@ -31,10 +31,9 @@ loginbutton.addEventListener('click', async () => {
 clearListButton.addEventListener("click", async () => {
     try {
         // Faz a requisição DELETE para o backend
-        const response = await fetch("/api/limpar", {
+        const response = await fetch("/api/limpar/", {
             method: "DELETE",
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Basic ${credentials}`
             }
         });

@@ -56,17 +56,6 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
     return {"message": "Autenticação bem-sucedida"}
 
 
-# Função para limpar pastas
-@app.delete("/limpar")
-def limpar_pastas(credentials: HTTPBasicCredentials = Depends(security)):
-    limpar_pastas(USERS.get(credentials.username))
-
-def limpar_pastas_process(user_dir):
-    if os.path.exists(user_dir):
-        shutil.rmtree(user_dir)
-    os.makedirs(user_dir, exist_ok=True)
-    os.makedirs(f"{user_dir}/{NF_DIR}", exist_ok=True)
-
 def remover_caracteres_especiais(texto):
     return re.sub(r"[^a-zA-Z0-9\s:/]", "", texto)
 
@@ -237,6 +226,23 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
         return FileResponse(OUTPUT_ZIP, media_type="application/zip", filename="relatorio_e_notas.zip")
 
     return JSONResponse(content={"status": "concluido", "download_url": "/download-relatorio/"}, status_code=200)
+
+
+
+
+# Função para limpar pastas
+@app.delete("/limpar/")
+def limpar_pastas(credentials: HTTPBasicCredentials = Depends(security)):
+    """Verifica o status do processamento e disponibiliza o download do relatório, CSV e notas"""
+    username = credentials.username
+    user_dir = os.path.join(PROCESSING_DIR, username)
+    limpar_pastas(user_dir)
+
+def limpar_pastas_process(user_dir):
+    if os.path.exists(user_dir):
+        shutil.rmtree(user_dir)
+    os.makedirs(user_dir, exist_ok=True)
+    os.makedirs(f"{user_dir}/{NF_DIR}", exist_ok=True)
 
 # Verifica se está rodando diretamente
 if __name__ == "__main__":
