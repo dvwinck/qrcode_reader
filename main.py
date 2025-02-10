@@ -276,7 +276,7 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
         salvar_resultados_em_csv(resultados[username], csv_file)
         salvar_resultados_em_arquivo(resultados[username], report_file)
         copiar_arquivos_nfe(user_dir)
-        compactar_relatorio(user_dir)
+        compactar_relatorio(csv_file,user_dir)
 
     # Retorna o arquivo ZIPs gerado
     zip_path = os.path.join(user_dir, OUTPUT_ZIP)
