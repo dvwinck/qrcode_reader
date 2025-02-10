@@ -240,10 +240,7 @@ async def download_zip(credentials: HTTPBasicCredentials = Depends(security)):
         raise HTTPException(status_code=404, detail="Arquivo ZIP não encontrado.")
 
 @app.post("/processar-qrcode/")
-async def processar_qrcode(
-    request: QRCodeRequest,
-    credentials: HTTPBasicCredentials = Depends(security)
-):
+async def processar_qrcode(request: QRCodeRequest,credentials: HTTPBasicCredentials = Depends(security)):
     """Processa um QR Code individualmente ao ser lido"""
     username = credentials.username
     user_dir = os.path.join(PROCESSING_DIR, username)

@@ -29,8 +29,6 @@ async function processarQRCode(qrcode) {
     try {
         statusLabel.innerText = `Enviando QR Code...`;
 
-        const credentials = btoa(`${USERNAME}:${PASSWORD}`); // Converte credenciais para Base64
-
         const response = await fetch("/api/processar-qrcode/", {
             method: "POST",
             headers: {
