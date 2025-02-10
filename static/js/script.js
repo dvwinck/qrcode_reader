@@ -62,11 +62,9 @@ csvButton.addEventListener('click', async () => {
                 "Authorization": `Basic ${credentials}`
             }
         });
-
         if (!response.ok) {
             throw new Error("Falha ao baixar o arquivo.");
         }
-
         const blob = await response.blob();
         const downloadUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -78,5 +76,33 @@ csvButton.addEventListener('click', async () => {
     } catch (error) {
         console.error("Erro ao baixar o arquivo:", error);
         alert("Erro ao baixar o arquivo.");
+    }
+});
+
+clearListButton.addEventListener("click", () => {
+    try {
+        // Faz a requisição DELETE para o backend
+        // Faz a requisição DELETE para o backend
+        const response = await fetch("/limpar", {
+            method: "DELETE",
+            headers: {
+                'Authorization': `Basic ${credentials}`
+            }
+        });
+
+        // Aguarda a resposta antes de verificar se foi bem-sucedida
+        if (!response.ok) {
+            throw new Error(`Erro ao limpar: ${response.statusText}`);
+        }
+
+        // Limpa os QR Codes do frontend após a resposta bem-sucedida do backend
+        scannedCodes = [];
+        document.getElementById("code-list").innerHTML = "";
+        document.getElementById("qr-count").textContent = "0";
+
+        console.log("Lista de QR Codes limpa com sucesso.");
+    } catch (error) {
+        console.error("Erro ao tentar limpar QR Codes:", error);
+        alert("Erro ao tentar limpar os QR Codes.");
     }
 });

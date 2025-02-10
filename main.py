@@ -59,7 +59,9 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
 # Função para limpar pastas
 @app.delete("/limpar")
 def limpar_pastas(credentials: HTTPBasicCredentials = Depends(security)):
-    user_dir = USERS.get(credentials.username)
+    limpar_pastas(USERS.get(credentials.username))
+
+def limpar_pastas_process(user_dir):
     if os.path.exists(user_dir):
         shutil.rmtree(user_dir)
     os.makedirs(user_dir, exist_ok=True)
@@ -201,7 +203,7 @@ async def processar_qrcode(request: QRCodeRequest,credentials: HTTPBasicCredenti
 
     if username not in resultados:
         resultados[username] = []
-        limpar_pastas(user_dir)
+        limpar_pastas_process(user_dir)
 
     sequencial = len(resultados[username]) + 1
     resultado = obter_dados_cupom(request.qrcode_url, sequencial, user_dir)
