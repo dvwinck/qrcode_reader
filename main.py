@@ -280,7 +280,7 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
 
 
     if os.path.exists(OUTPUT_ZIP):
-        return FileResponse(zip_path, media_type="application/zip", filename="relatorio_e_notas.zip")
+        return FileResponse(OUTPUT_ZIP, media_type="application/zip", filename="relatorio_e_notas.zip")
 
     return JSONResponse(content={"status": "concluido", "download_url": "/download-relatorio/"}, status_code=200)
 
