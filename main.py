@@ -57,7 +57,9 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
 
 
 # Função para limpar pastas
-def limpar_pastas(user_dir):
+@app.delete("/limpar")
+def limpar_pastas(credentials: HTTPBasicCredentials = Depends(security)):
+    user_dir = USERS.get(credentials.username)
     if os.path.exists(user_dir):
         shutil.rmtree(user_dir)
     os.makedirs(user_dir, exist_ok=True)
@@ -191,54 +193,6 @@ def copiar_arquivos_nfe(user_dir):
             destino_arquivo = os.path.join(destino_atual, file)
             shutil.copy2(origem_arquivo, destino_arquivo)
 
-
-status_processamento = {"status": "pendente"}
-@app.post("/processar-links/")
-async def processar_links(file: UploadFile = File(...), credentials: HTTPBasicCredentials = Depends(security)):
-    global status_processamento
-    status_processamento["status"] = "em andamento"
-
-    user_dir = os.path.join(PROCESSING_DIR, credentials.username)
-    limpar_pastas(user_dir)
-
-    links = (await file.read()).decode("utf-8").splitlines()
-    resultados = []
-
-    for idx, link in enumerate(links, start=1):
-        resultado = obter_dados_cupom(link, idx, user_dir)
-        resultados.append(resultado)
-        time.sleep(_SLEEP_TIME)
-
-    # Gerar relatório em CSV
-    csv_file = f"{user_dir}/relatorio_cupons.csv"
-    report_file = f"{user_dir}/relatorio_cupons.html"
-    salvar_resultados_em_csv(resultados, csv_file)
-    salvar_resultados_em_arquivo(resultados, report_file)
-
-    # Copiar arquivos padrões
-    copiar_arquivos_nfe(user_dir)
-
-    # Compactar resultados
-    compactar_relatorio(csv_file,user_dir)
-
-    # Atualiza o status para "concluído"
-    status_processamento["status"] = "concluido"
-
-    return JSONResponse(content={"message": "Processamento concluído com sucesso!", "download_url": "/download-zip"})
-
-
-@app.get("/status-processamento/")
-async def get_status_processamento(credentials: HTTPBasicCredentials = Depends(security)):
-    return {"status": status_processamento["status"], "download_url": "/download-zip"}
-
-# Endpoint para baixar o ZIP
-@app.get("/download-zip")
-async def download_zip(credentials: HTTPBasicCredentials = Depends(security)):
-    if os.path.exists(OUTPUT_ZIP):
-        return FileResponse(OUTPUT_ZIP, media_type="application/zip", filename=OUTPUT_ZIP)
-    else:
-        raise HTTPException(status_code=404, detail="Arquivo ZIP não encontrado.")
-
 @app.post("/processar-qrcode/")
 async def processar_qrcode(request: QRCodeRequest,credentials: HTTPBasicCredentials = Depends(security)):
     """Processa um QR Code individualmente ao ser lido"""
@@ -256,8 +210,6 @@ async def processar_qrcode(request: QRCodeRequest,credentials: HTTPBasicCredenti
     time.sleep(_SLEEP_TIME)
 
     return JSONResponse(content={"message": "QR Code processado!", "total_qrcodes": len(resultados[username])})
-
-
 
 @app.get("/download-relatorio/")
 async def download_relatorio(credentials: HTTPBasicCredentials = Depends(security)):
