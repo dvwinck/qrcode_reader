@@ -1,8 +1,10 @@
 const statusLabel = document.getElementById('status-label');
 const loginbutton = document.getElementById('login-button');
-const clearListButton = document.getElementById('login-button')
+const clearListButton = document.getElementById('clear-list-btn')
+const downloadButton = document.getElementById('download-btn')
 
 let credentials = btoa(`"":""`);
+
 loginbutton.addEventListener('click', async () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
@@ -25,6 +27,62 @@ loginbutton.addEventListener('click', async () => {
         alert('Usuário ou senha inválidos');
     }
 });
+
+clearListButton.addEventListener("click", async () => {
+    try {
+        // Faz a requisição DELETE para o backend
+        const response = await fetch("/api/limpar", {
+            method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${credentials}`
+            }
+        });
+
+        // Aguarda a resposta antes de verificar se foi bem-sucedida
+        if (!response.ok) {
+            throw new Error(`Erro ao limpar: ${response.statusText}`);
+        }
+
+        // Limpa os QR Codes do frontend após a resposta bem-sucedida do backend
+        scannedCodes = [];
+        document.getElementById("code-list").innerHTML = "";
+        document.getElementById("qr-count").textContent = "0";
+
+        console.log("Lista de QR Codes limpa com sucesso.");
+    } catch (error) {
+        console.error("Erro ao tentar limpar QR Codes:", error);
+    }
+});
+
+// 🎯 **Botão para baixar relatório, CSV e notas**
+downloadButton.addEventListener('click', async () => {
+    try {
+        const response = await fetch("/api/download-relatorio/", {
+            method: "GET",
+            headers: {
+                "Authorization": `Basic ${credentials}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Falha ao baixar o arquivo.");
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = "relatorio_e_notas.zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error("Erro ao baixar o arquivo:", error);
+        alert("Erro ao baixar o arquivo.");
+    }
+});
+
 
 async function processarQRCode(qrcode) {
     try {
@@ -52,29 +110,3 @@ async function processarQRCode(qrcode) {
         statusLabel.innerText = "Erro ao enviar QR Code.";
     }
 }
-
-clearListButton.addEventListener("click", async () => {
-    try {
-        // Faz a requisição DELETE para o backend
-        const response = await fetch("/api/limpar/", {
-            method: "DELETE",
-            headers: {
-                'Authorization': `Basic ${credentials}`
-            }
-        });
-
-        // Aguarda a resposta antes de verificar se foi bem-sucedida
-        if (!response.ok) {
-            throw new Error(`Erro ao limpar: ${response.statusText}`);
-        }
-
-        // Limpa os QR Codes do frontend após a resposta bem-sucedida do backend
-        scannedCodes = [];
-        document.getElementById("code-list").innerHTML = "";
-        document.getElementById("qr-count").textContent = "0";
-
-        console.log("Lista de QR Codes limpa com sucesso.");
-    } catch (error) {
-        console.error("Erro ao tentar limpar QR Codes:", error);
-    }
-});
