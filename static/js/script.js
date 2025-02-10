@@ -42,7 +42,6 @@ async function processarQRCode(qrcode) {
 
         if (response.ok) {
             statusLabel.innerText = `QR Code enviado! Total processados: ${data.total_qrcodes}`;
-            ativarBotao();
         } else {
             console.error("Erro ao processar QR Code:", data.message);
             statusLabel.innerText = `Erro: ${data.message}`;
