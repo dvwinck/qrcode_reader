@@ -29,19 +29,22 @@ async function processarQRCode(qrcode) {
     try {
         statusLabel.innerText = `Enviando QR Code...`;
 
+        const credentials = btoa(`${USERNAME}:${PASSWORD}`); // Converte credenciais para Base64
+
         const response = await fetch("/api/processar-qrcode/", {
             method: "POST",
             headers: {
                 'Authorization': `Basic ${credentials}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ qrcode_url: qrcode })
+            body: JSON.stringify({ qrcode_url: qrcode }) // Corrigido para JSON correto
         });
 
-        const data = await response.json(); // Aguarda a conversão da resposta para JSON
+        const data = await response.json();
 
         if (response.ok) {
             statusLabel.innerText = `QR Code enviado! Total processados: ${data.total_qrcodes}`;
+            ativarBotao();
         } else {
             console.error("Erro ao processar QR Code:", data.message);
             statusLabel.innerText = `Erro: ${data.message}`;
@@ -51,6 +54,7 @@ async function processarQRCode(qrcode) {
         statusLabel.innerText = "Erro ao enviar QR Code.";
     }
 }
+
 
 // 🎯 **Botão para baixar relatório, CSV e notas**
 csvButton.addEventListener('click', async () => {

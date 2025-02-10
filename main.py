@@ -9,11 +9,12 @@ import time
 import shutil
 import csv
 import re
-from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from starlette.responses import JSONResponse
 import logging
 
-
+class QRCodeRequest(BaseModel):
+    qrcode_url: str
 
 _SLEEP_TIME = 1
 NF_DIR = "NF"
@@ -238,9 +239,11 @@ async def download_zip(credentials: HTTPBasicCredentials = Depends(security)):
     else:
         raise HTTPException(status_code=404, detail="Arquivo ZIP não encontrado.")
 
-
 @app.post("/processar-qrcode/")
-async def processar_qrcode(qrcode_url: str, credentials: HTTPBasicCredentials = Depends(security)):
+async def processar_qrcode(
+    request: QRCodeRequest,
+    credentials: HTTPBasicCredentials = Depends(security)
+):
     """Processa um QR Code individualmente ao ser lido"""
     username = credentials.username
     user_dir = os.path.join(PROCESSING_DIR, username)
@@ -250,12 +253,13 @@ async def processar_qrcode(qrcode_url: str, credentials: HTTPBasicCredentials = 
         limpar_pastas(user_dir)
 
     sequencial = len(resultados[username]) + 1
-    resultado = obter_dados_cupom(qrcode_url, sequencial, user_dir)
+    resultado = obter_dados_cupom(request.qrcode_url, sequencial, user_dir)
     resultados[username].append(resultado)
 
     time.sleep(_SLEEP_TIME)
 
     return JSONResponse(content={"message": "QR Code processado!", "total_qrcodes": len(resultados[username])})
+
 
 
 @app.get("/download-relatorio/")
