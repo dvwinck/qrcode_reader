@@ -56,7 +56,7 @@ async function processarQRCode(qrcode) {
 clearListButton.addEventListener("click", async () => {
     try {
         // Faz a requisição DELETE para o backend
-        const response = await fetch("/limpar", {
+        const response = await fetch("/api/limpar/", {
             method: "DELETE",
             headers: {
                 'Authorization': `Basic ${credentials}`
@@ -76,6 +76,5 @@ clearListButton.addEventListener("click", async () => {
         console.log("Lista de QR Codes limpa com sucesso.");
     } catch (error) {
         console.error("Erro ao tentar limpar QR Codes:", error);
-        alert("Erro ao tentar limpar os QR Codes.");
     }
 });
