@@ -25,7 +25,6 @@ document.getElementById('login-button').addEventListener('click', async () => {
     }
 });
 
-// 🚀 **Função para processar QR Code automaticamente**
 async function processarQRCode(qrcode) {
     try {
         statusLabel.innerText = `Enviando QR Code...`;
@@ -39,29 +38,19 @@ async function processarQRCode(qrcode) {
             body: JSON.stringify({ qrcode_url: qrcode })
         });
 
-        const data = await response.json();
+        const data = await response.json(); // Aguarda a conversão da resposta para JSON
 
         if (response.ok) {
             statusLabel.innerText = `QR Code enviado! Total processados: ${data.total_qrcodes}`;
-            ativarBotao();
         } else {
             console.error("Erro ao processar QR Code:", data.message);
+            statusLabel.innerText = `Erro: ${data.message}`;
         }
     } catch (error) {
         console.error("Erro ao enviar QR Code:", error);
+        statusLabel.innerText = "Erro ao enviar QR Code.";
     }
 }
-
-// 📷 **Captura automática do QR Code**
-function onQRCodeScanned(qrcode) {
-    processarQRCode(qrcode);
-}
-
-// 🔍 **Simulação de leitura do QR Code (substituir pela leitura real)**
-document.getElementById("video").addEventListener("click", () => {
-    const sampleQRCode = "https://sat.sef.sc.gov.br/nfce/consulta?p=123456789";
-    onQRCodeScanned(sampleQRCode);
-});
 
 // 🎯 **Botão para baixar relatório, CSV e notas**
 csvButton.addEventListener('click', async () => {
@@ -90,17 +79,3 @@ csvButton.addEventListener('click', async () => {
         alert("Erro ao baixar o arquivo.");
     }
 });
-
-// 🔹 **Desativar botão de download inicialmente**
-function desativarBotao() {
-    csvButton.disabled = true;
-    csvButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-    csvButton.classList.add('bg-gray-400', 'cursor-not-allowed');
-}
-
-// 🔹 **Ativar botão de download**
-function ativarBotao() {
-    csvButton.disabled = false;
-    csvButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
-    csvButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
-}

@@ -82,6 +82,6 @@ function addCodeToList(code) {
         listItem.textContent = code;
         document.getElementById("code-list").appendChild(listItem);
 
-        processarQRCode(code);
+        let promise = processarQRCode(code);
     }
 }
