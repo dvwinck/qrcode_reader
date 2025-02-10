@@ -1,8 +1,9 @@
-const csvButton = document.getElementById('csv');
 const statusLabel = document.getElementById('status-label');
+const loginbutton = document.getElementById('login-button');
+const clearListButton = document.getElementById('login-button')
 
 let credentials = btoa(`"":""`);
-document.getElementById('login-button').addEventListener('click', async () => {
+loginbutton.addEventListener('click', async () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     credentials = btoa(`${username}:${password}`);
@@ -52,36 +53,8 @@ async function processarQRCode(qrcode) {
     }
 }
 
-
-// 🎯 **Botão para baixar relatório, CSV e notas**
-csvButton.addEventListener('click', async () => {
+clearListButton.addEventListener("click", async () => {
     try {
-        const response = await fetch("/api/download-relatorio/", {
-            method: "GET",
-            headers: {
-                "Authorization": `Basic ${credentials}`
-            }
-        });
-        if (!response.ok) {
-            throw new Error("Falha ao baixar o arquivo.");
-        }
-        const blob = await response.blob();
-        const downloadUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = downloadUrl;
-        link.download = "relatorio_e_notas.zip";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } catch (error) {
-        console.error("Erro ao baixar o arquivo:", error);
-        alert("Erro ao baixar o arquivo.");
-    }
-});
-
-clearListButton.addEventListener("click", () => {
-    try {
-        // Faz a requisição DELETE para o backend
         // Faz a requisição DELETE para o backend
         const response = await fetch("/limpar", {
             method: "DELETE",
