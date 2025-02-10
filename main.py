@@ -232,11 +232,10 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
 
 # Função para limpar pastas
 @app.delete("/limpar/")
-def limpar_pastas(credentials: HTTPBasicCredentials = Depends(security)):
-    """Verifica o status do processamento e disponibiliza o download do relatório, CSV e notas"""
+async def limpar_pastas(credentials: HTTPBasicCredentials = Depends(security)):
     username = credentials.username
     user_dir = os.path.join(PROCESSING_DIR, username)
-    limpar_pastas(user_dir)
+    limpar_pastas_process(user_dir)
 
 def limpar_pastas_process(user_dir):
     if os.path.exists(user_dir):
