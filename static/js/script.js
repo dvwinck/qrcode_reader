@@ -1,26 +1,20 @@
-
-const exportButton = document.getElementById('export');
-const downloadButton = document.getElementById('download');
-const csvButton = document.getElementById('csv');
-const statusLabel = document.getElementById('status-label'); // Novo label
-const clearListButton = document.getElementById("clear-list");
-
-desativarBotao();
+const statusLabel = document.getElementById('status-label');
+const loginbutton = document.getElementById('login-button');
+const clearListButton = document.getElementById('clear-list-btn')
+const downloadButton = document.getElementById('download-btn')
 
 let credentials = btoa(`"":""`);
-document.getElementById('login-button').addEventListener('click', async () => {
+
+loginbutton.addEventListener('click', async () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     credentials = btoa(`${username}:${password}`);
-
-    // Codifica o usuário e senha em Base64
-
 
     const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${credentials}`  // Adiciona a autenticação
+            'Authorization': `Basic ${credentials}`
         },
         body: JSON.stringify({ username, password })
     });
@@ -34,86 +28,36 @@ document.getElementById('login-button').addEventListener('click', async () => {
     }
 });
 
-exportButton.addEventListener('click', async () => {
-    if (scannedCodes.length === 0) {
-        alert("Nenhum código para exportar!");
-        return;
-    }
-    showLoader();
-    desativarBotao();
-
-    // Criando um arquivo Blob com os dados escaneados
-    const blob = new Blob([scannedCodes.join('\n')], { type: 'text/plain' });
-    const formData = new FormData();
-    formData.append("file", blob, "scanned-codes.txt");
-
+clearListButton.addEventListener("click", async () => {
     try {
-        const response = await fetch("/api/processar-links/", {
-            method: "POST",
+        // Faz a requisição DELETE para o backend
+        const response = await fetch("/api/limpar/", {
+            method: "DELETE",
             headers: {
-                // Enviar autenticação Basic Auth (se necessário)
-                'Authorization': `Basic ${credentials}`  // Adiciona a autenticação
-            },
-            body: formData
+                'Authorization': `Basic ${credentials}`
+            }
         });
 
-        const data = await response.json();
-
-        if (response.ok) {
-            statusLabel.innerText =("Processamento iniciado. Aguarde...");
-
-            // Verifica periodicamente se o processamento foi concluído
-            await verificarProcessamentoConcluido();
-        } else {
-            statusLabel.innerText =("Erro no processamento: " + (data.message || "Erro desconhecido"));
+        // Aguarda a resposta antes de verificar se foi bem-sucedida
+        if (!response.ok) {
+            throw new Error(`Erro ao limpar: ${response.statusText}`);
         }
+
+        // Limpa os QR Codes do frontend após a resposta bem-sucedida do backend
+        scannedCodes = [];
+        document.getElementById("code-list").innerHTML = "";
+        document.getElementById("qr-count").textContent = "0";
+
+        console.log("Lista de QR Codes limpa com sucesso.");
     } catch (error) {
-        console.error("Erro ao enviar os links:", error);
-        statusLabel.innerText = ("Erro ao conectar-se ao servidor.", error);
-    } finally {
-       hideLoader();
+        console.error("Erro ao tentar limpar QR Codes:", error);
     }
 });
 
-// Função para verificar o status do processamento no backend
-async function verificarProcessamentoConcluido() {
+// 🎯 **Botão para baixar relatório, CSV e notas**
+downloadButton.addEventListener('click', async () => {
     try {
-        while (true) {
-            const statusResponse = await fetch("/api/status-processamento/", {
-                method: "GET",
-                headers: {
-                    'Authorization': `Basic ${credentials}`  // Adiciona a autenticação
-                }
-            });
-
-            const statusData = await statusResponse.json();
-
-            if (statusResponse.ok && statusData.status === "concluido") {
-                statusLabel.innerText =("Processamento concluído com sucesso! Você pode baixar o relatório.");
-                ativarBotao()
-                return;
-            }
-
-            // Aguarda 5 segundos antes de verificar novamente
-            await new Promise(resolve => setTimeout(resolve, 15000));
-        }
-    } catch (error) {
-        console.error("Erro ao verificar status:", error);
-        statusLabel.innerText =("Erro ao verificar o status do processamento.");
-    }
-}
-
-downloadButton.addEventListener('click', () => {
-    const blob = new Blob([scannedCodes.join('\n')], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'scanned-codes.txt';
-    link.click();
-});
-
-csvButton.addEventListener('click', async () => {
-    try {
-        const response = await fetch("api/download-zip", {
+        const response = await fetch("/api/download-relatorio/", {
             method: "GET",
             headers: {
                 "Authorization": `Basic ${credentials}`
@@ -124,14 +68,11 @@ csvButton.addEventListener('click', async () => {
             throw new Error("Falha ao baixar o arquivo.");
         }
 
-        // Criar um blob com os dados recebidos
         const blob = await response.blob();
         const downloadUrl = URL.createObjectURL(blob);
-
-        // Criar um link e forçar o download
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = "relatorio.zip"; // Nome do arquivo baixado
+        link.download = "relatorio_e_notas.zip";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -141,44 +82,30 @@ csvButton.addEventListener('click', async () => {
     }
 });
 
-function showLoader() {
-    const loader = document.getElementById("loader");
-    loader.classList.remove("hidden"); // Exibe o loader
+
+async function processarQRCode(qrcode) {
+    try {
+        statusLabel.innerText = `Enviando QR Code...`;
+
+        const response = await fetch("/api/processar-qrcode/", {
+            method: "POST",
+            headers: {
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ qrcode_url: qrcode }) // Corrigido para JSON correto
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            statusLabel.innerText = `QR Code enviado! Total processados: ${data.total_qrcodes}`;
+        } else {
+            console.error("Erro ao processar QR Code:", data.message);
+            statusLabel.innerText = `Erro: ${data.message}`;
+        }
+    } catch (error) {
+        console.error("Erro ao enviar QR Code:", error);
+        statusLabel.innerText = "Erro ao enviar QR Code.";
+    }
 }
-
-// Nova função para esconder o loader quando necessário
-function hideLoader() {
-    const loader = document.getElementById("loader");
-    loader.classList.add("hidden"); // Esconde o loader
-}
-
-
-// Função para desativar o botão (ficará cinza)
-function desativarBotao() {
-    csvButton.disabled = true;
-    csvButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-    csvButton.classList.add('bg-gray-400', 'cursor-not-allowed');
-}
-
-// Função para ativar o botão (volta ao azul)
-function ativarBotao() {
-    csvButton.disabled = false;
-    csvButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
-    csvButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
-}
-
-
-// Register service worker for PWA functionality
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('js/service-worker.js').then(() => {
-        console.log('Service Worker registered successfully');
-    }).catch(error => {
-        console.error('Service Worker registration failed:', error);
-    });
-}
-
-clearListButton.addEventListener("click", () => {
-    scannedCodes = []; // Limpa o array
-    document.getElementById("code-list").innerHTML = ""; // Limpa a listagem visualmente
-    document.getElementById("qr-count").textContent = "0"; // Reseta o contador de QR Codes lidos
-});
