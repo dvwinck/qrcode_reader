@@ -12,6 +12,7 @@ import re
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
 import logging
+import uuid
 
 class QRCodeRequest(BaseModel):
     qrcode_url: str
@@ -19,7 +20,6 @@ class QRCodeRequest(BaseModel):
 _SLEEP_TIME = 1
 NF_DIR = "NF"
 PROCESSING_DIR = "PROCESSING"
-OUTPUT_ZIP = "relatorio_e_notas.zip"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,10 +32,10 @@ security = HTTPBasic()
 
 USERS = {
     "admin": "ott@2025",
-    "diogo": "diogo",
-    "xavier": "ott@2025",
+    "diogo": "ott@2025",
+    "carlos": "ott@2025",
     "ricardo": "ott@2025",
-    "tatiana": "ott@2025",
+    "tatiane": "ott@2025",
     "fabricio": "ott@2025",
     "talita": "ott@2025"
 }
@@ -148,7 +148,7 @@ def salvar_resultados_em_arquivo(resultados, nome_arquivo):
 
 # Função para compactar os resultados
 def compactar_relatorio(file, user_dir):
-    with zipfile.ZipFile(OUTPUT_ZIP, "w", zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(file, "w", zipfile.ZIP_DEFLATED) as zf:
         # Adiciona o arquivo individual
         zf.write(file, arcname=os.path.basename(file))
 
@@ -191,8 +191,7 @@ async def processar_qrcode(request: QRCodeRequest,credentials: HTTPBasicCredenti
     user_dir = os.path.join(PROCESSING_DIR, username)
 
     if username not in resultados:
-        resultados[username] = []
-        limpar_pastas_process(user_dir)
+        limpar_pastas_process(username)
 
     sequencial = len(resultados[username]) + 1
     resultado = obter_dados_cupom(request.qrcode_url, sequencial, user_dir)
@@ -201,6 +200,8 @@ async def processar_qrcode(request: QRCodeRequest,credentials: HTTPBasicCredenti
     time.sleep(_SLEEP_TIME)
 
     return JSONResponse(content={"message": "QR Code processado!", "total_qrcodes": len(resultados[username])})
+
+
 
 @app.get("/download-relatorio/")
 async def download_relatorio(credentials: HTTPBasicCredentials = Depends(security)):
@@ -214,34 +215,36 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
     # Gerar CSV e relatório se ainda não foi feito
     csv_file = os.path.join(user_dir, "relatorio_cupons.csv")
     report_file = os.path.join(user_dir, "relatorio_cupons.html")
+
+    unique_id = uuid.uuid4().hex[:4]  # Gera um identificador único curto
+    user_zip_file = os.path.join(user_dir, f"relatorio_{unique_id}.zip")  # Nome do ZIP com UUID
+
     # Retorna o arquivo ZIPs gerado
     if not os.path.exists(csv_file):
         salvar_resultados_em_csv(resultados[username], csv_file)
         salvar_resultados_em_arquivo(resultados[username], report_file)
         copiar_arquivos_nfe(user_dir)
-        compactar_relatorio(OUTPUT_ZIP,user_dir)
+        compactar_relatorio(user_zip_file,user_dir)
 
 
-    if os.path.exists(OUTPUT_ZIP):
-        return FileResponse(OUTPUT_ZIP, media_type="application/zip", filename="relatorio_e_notas.zip")
+    if os.path.exists(user_zip_file):
+        return FileResponse(user_zip_file, media_type="application/zip", filename=user_zip_file)
 
     return JSONResponse(content={"status": "concluido", "download_url": "/download-relatorio/"}, status_code=200)
 
-
-
-
 # Função para limpar pastas
 @app.delete("/limpar/")
-async def limpar_pastas(credentials: HTTPBasicCredentials = Depends(security)):
+async def limpar(credentials: HTTPBasicCredentials = Depends(security)):
     username = credentials.username
-    user_dir = os.path.join(PROCESSING_DIR, username)
-    limpar_pastas_process(user_dir)
+    limpar_pastas_process(username)
 
-def limpar_pastas_process(user_dir):
+def limpar_pastas_process(username):
+    user_dir = os.path.join(PROCESSING_DIR, username)
     if os.path.exists(user_dir):
         shutil.rmtree(user_dir)
     os.makedirs(user_dir, exist_ok=True)
     os.makedirs(f"{user_dir}/{NF_DIR}", exist_ok=True)
+    resultados[username] = []
 
 # Verifica se está rodando diretamente
 if __name__ == "__main__":
