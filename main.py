@@ -156,6 +156,10 @@ def compactar_relatorio(file, user_dir):
         for root, _, files_ in os.walk(user_dir):
             for file in files_:
                 full_path = os.path.join(root, file)
+
+                if full_path == file:
+                    continue
+
                 relative_path = os.path.relpath(full_path, user_dir)  # Obtém o caminho relativo
                 zf.write(full_path, arcname=relative_path)
 
@@ -218,6 +222,7 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
 
     unique_id = uuid.uuid4().hex[:4]  # Gera um identificador único curto
     user_zip_file = os.path.join(user_dir, f"relatorio_{unique_id}.zip")  # Nome do ZIP com UUID
+    logger.info(f"file name: {user_zip_file}")
 
     # Retorna o arquivo ZIPs gerado
     if not os.path.exists(csv_file):
@@ -228,7 +233,7 @@ async def download_relatorio(credentials: HTTPBasicCredentials = Depends(securit
 
 
     if os.path.exists(user_zip_file):
-        return FileResponse(user_zip_file, media_type="application/zip", filename=user_zip_file)
+        return FileResponse(user_zip_file, media_type="application/zip", filename=f"{username}_relatorio_{unique_id}.zip")
 
     return JSONResponse(content={"status": "concluido", "download_url": "/download-relatorio/"}, status_code=200)
 
